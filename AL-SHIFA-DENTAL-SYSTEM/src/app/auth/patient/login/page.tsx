@@ -1,10 +1,46 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation"; // For redirection
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, User } from "lucide-react";
+import { User, Loader2, AlertCircle } from "lucide-react";
+import api from "@/lib/api"; // Import our API helper
 
 export default function PatientLogin() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      // 1. Call the API
+      const response = await api.post("/login", {
+        email: email,
+        password: password
+      });
+
+      // 2. Save Token (Digital Key)
+      localStorage.setItem("token", response.data.access_token);
+      localStorage.setItem("role", response.data.role);
+
+      // 3. Redirect to Dashboard
+      router.push("/patient/dashboard");
+      
+    } catch (err: any) {
+      console.error(err);
+      setError("Invalid email or password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -23,20 +59,54 @@ export default function PatientLogin() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border-t-4 border-patient">
-          <form className="space-y-6">
-            <Input label="Email Address" type="email" placeholder="ali@example.com" />
-            <Input label="Password" type="password" />
+          
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg flex items-center gap-2 animate-in slide-in-from-top-2">
+              <AlertCircle className="h-4 w-4" /> {error}
+            </div>
+          )}
+
+          <form className="space-y-6" onSubmit={handleLogin}>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+              <Input 
+                type="email" 
+                placeholder="patient@test.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+              <Input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
             <div className="flex items-center justify-between">
               <div className="text-sm">
-                <Link href="#" className="font-medium text-patient hover:text-patient-dark">
+                <Link 
+                  href="/auth/patient/forgot-password" 
+                  className="font-medium text-patient hover:text-patient-dark hover:underline"
+                >
                   Forgot password?
                 </Link>
               </div>
             </div>
 
-            <Button variant="patient" className="w-full" size="lg">
-              Sign In
+            <Button 
+              variant="patient" 
+              className="w-full" 
+              size="lg" 
+              disabled={loading}
+            >
+              {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing In...</> : "Sign In"}
             </Button>
           </form>
 

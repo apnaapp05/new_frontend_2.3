@@ -1,48 +1,62 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Bot, Activity, BrainCircuit, Database, DollarSign, Clock } from "lucide-react";
+"use client";
+import { useState } from "react";
+import AgentChat from "@/components/agent-chat";
+import { Card } from "@/components/ui/card";
+import { Bot, Database, DollarSign, Activity } from "lucide-react";
 
-export default function AgentsStatus() {
+export default function AgentsPage() {
+  const [selectedAgent, setSelectedAgent] = useState<"appointment" | "inventory" | "finance" | "case">("finance");
+
   const agents = [
-    { name: "Appointment Agent", status: "Active", load: "Low", icon: Clock, color: "text-blue-600", desc: "Handling bookings & rescheduling." },
-    { name: "Inventory Agent", status: "Processing", load: "High", icon: Database, color: "text-red-600", desc: "Analyzing stock levels." },
-    { name: "Revenue Agent", status: "Active", load: "Medium", icon: DollarSign, color: "text-green-600", desc: "Tracking payments & invoices." },
-    { name: "Case Tracking Agent", status: "Standby", load: "None", icon: BrainCircuit, color: "text-purple-600", desc: "Updating patient histories." },
+    { id: "finance", name: "Revenue Controller", icon: DollarSign, color: "bg-green-100 text-green-700" },
+    { id: "inventory", name: "Supply Chain Bot", icon: Database, color: "bg-red-100 text-red-700" },
+    { id: "case", name: "Clinical Case Manager", icon: Activity, color: "bg-purple-100 text-purple-700" },
+    { id: "appointment", name: "Scheduling Assistant", icon: Bot, color: "bg-blue-100 text-blue-700" },
   ];
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900">AI Agent Network Status</h1>
-      
-      <div className="grid md:grid-cols-2 gap-6">
-        {agents.map((agent) => (
-          <Card key={agent.name} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex gap-4">
-                  <div className={`h-14 w-14 rounded-xl bg-slate-50 flex items-center justify-center ${agent.color}`}>
-                    <agent.icon className="h-8 w-8" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-slate-900">{agent.name}</h3>
-                    <p className="text-sm text-slate-500">{agent.desc}</p>
-                  </div>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                  agent.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' : 
-                  agent.status === 'Processing' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                  'bg-slate-100 text-slate-600 border-slate-200'
-                }`}>
-                  {agent.status}
+    <div className="space-y-6 h-[calc(100vh-140px)] flex flex-col">
+      <div className="flex flex-col md:flex-row gap-6 h-full">
+        
+        {/* Left: Agent Selector */}
+        <div className="w-full md:w-1/3 grid grid-cols-2 md:grid-cols-1 gap-4 content-start">
+          <div className="col-span-2 md:col-span-1 mb-2">
+            <h1 className="text-2xl font-bold text-slate-900">AI Command Center</h1>
+            <p className="text-slate-500 text-sm">Select an autonomous agent to interact with.</p>
+          </div>
+          
+          {agents.map((agent) => (
+            <Card 
+              key={agent.id}
+              onClick={() => setSelectedAgent(agent.id as any)}
+              className={`p-4 cursor-pointer transition-all border-2 flex items-center gap-4 ${
+                selectedAgent === agent.id 
+                  ? "border-doctor bg-slate-50 shadow-md" 
+                  : "border-transparent hover:border-slate-200"
+              }`}
+            >
+              <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${agent.color}`}>
+                <agent.icon className="h-6 w-6" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-bold text-slate-900">{agent.name}</h3>
+                <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span> Active
                 </span>
               </div>
-              
-              <div className="mt-6 flex items-center justify-between text-sm">
-                 <span className="text-slate-500">System Load: <span className="font-medium text-slate-900">{agent.load}</span></span>
-                 <Activity className="h-4 w-4 text-slate-300 animate-pulse" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+            </Card>
+          ))}
+        </div>
+
+        {/* Right: Chat Interface */}
+        <div className="flex-1 h-full">
+          <AgentChat 
+            key={selectedAgent} // Force re-render on switch
+            agentType={selectedAgent} 
+            agentName={agents.find(a => a.id === selectedAgent)?.name || "Agent"} 
+          />
+        </div>
+
       </div>
     </div>
   );

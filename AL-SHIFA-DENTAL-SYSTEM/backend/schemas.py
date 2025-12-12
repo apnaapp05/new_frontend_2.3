@@ -51,3 +51,7 @@ class AppointmentOut(BaseModel):
     
     class Config:
         from_attributes = True
+
+# 5. Forgot Password Schema
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr

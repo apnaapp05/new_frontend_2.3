@@ -1,10 +1,48 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Stethoscope } from "lucide-react";
+import { Stethoscope, Loader2, AlertCircle } from "lucide-react";
+import api from "@/lib/api";
 
 export default function DoctorLogin() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await api.post("/login", {
+        email,
+        password
+      });
+
+      // Role Check: Agar Patient galti se yahan login kare
+      if (response.data.role !== "doctor") {
+        setError("Access Denied: This portal is for Doctors only.");
+        return;
+      }
+
+      localStorage.setItem("token", response.data.access_token);
+      localStorage.setItem("role", response.data.role);
+      
+      router.push("/doctor/dashboard");
+
+    } catch (err: any) {
+      setError("Invalid credentials or server error.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -23,25 +61,31 @@ export default function DoctorLogin() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border-t-4 border-doctor">
-          <form className="space-y-6">
-            <Input label="Professional Email" type="email" placeholder="dr.name@clinic.com" />
-            <Input label="Password" type="password" />
+          
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" /> {error}
+            </div>
+          )}
+
+          <form className="space-y-6" onSubmit={handleLogin}>
+            <Input 
+              label="Professional Email" 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Input 
+              label="Password" 
+              type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 text-doctor focus:ring-doctor"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-900">
-                  Remember me
-                </label>
-              </div>
-
               <div className="text-sm">
-                {/* --- UPDATED LINK HERE --- */}
                 <Link 
                   href="/auth/doctor/forgot-password" 
                   className="font-medium text-doctor hover:text-doctor-dark hover:underline"
@@ -51,11 +95,9 @@ export default function DoctorLogin() {
               </div>
             </div>
 
-            <Link href="/doctor/dashboard">
-              <Button variant="doctor" className="w-full" size="lg">
-                Sign In
-              </Button>
-            </Link>
+            <Button variant="doctor" className="w-full" size="lg" disabled={loading}>
+              {loading ? <Loader2 className="animate-spin h-5 w-5"/> : "Sign In"}
+            </Button>
           </form>
 
           <div className="mt-6">
